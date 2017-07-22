@@ -4,7 +4,6 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff:
-.idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
 
@@ -15,12 +14,8 @@
 .idea/**/dataSources.local.xml
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
-
 # Gradle:
 .idea/**/gradle.xml
-.idea/**/libraries
-
 # Mongo Explorer plugin:
 .idea/**/mongoSettings.xml
 
@@ -129,8 +124,6 @@ local.properties
 .worksheet
 ### Java template
 # Compiled class file
-*.class
-
 # Log file
 *.log
 
@@ -141,7 +134,6 @@ local.properties
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 *.zip
@@ -153,3 +145,4 @@ hs_err_pid*
 /gelly-experiment.iml
 /.idea/
 /src/main/resources/log4j.properties
+/target/

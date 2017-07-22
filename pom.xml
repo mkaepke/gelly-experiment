@@ -25,8 +25,8 @@ under the License.
 	<version>0.1</version>
 	<packaging>jar</packaging>
 
-	<name>Flink Quickstart Job</name>
-	<url>http://www.myorganization.org</url>
+	<name>Flink Gelly Job</name>
+	<url>http://www.haw-hamburg.de</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -76,6 +76,11 @@ under the License.
 
 	<dependencies>
 		<!-- Apache Flink dependencies -->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-gelly_2.10</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-java</artifactId>
@@ -163,7 +168,7 @@ under the License.
 								</goals>
 								<configuration>
 									<artifactSet>
-										<excludes combine.self="override"></excludes>
+										<excludes combine.self="override"/>
 									</artifactSet>
 								</configuration>
 							</execution>
@@ -289,13 +294,13 @@ under the License.
 							</filters>
 							<!-- If you want to use ./bin/flink run <quickstart jar> uncomment the following lines.
 							This will add a Main-Class entry to the manifest file -->
-							<!--
+
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>de.haw.bigdata.StreamingJob</mainClass>
+                  <mainClass>de.haw.bigdata.job.Job</mainClass>
 								</transformer>
 							</transformers>
-						    -->
+
 							<createDependencyReducedPom>false</createDependencyReducedPom>
 						</configuration>
 					</execution>
@@ -307,8 +312,8 @@ under the License.
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source> <!-- If you want to use Java 8, change this to "1.8" -->
-					<target>1.7</target> <!-- If you want to use Java 8, change this to "1.8" -->
+					<source>1.8</source> <!-- If you want to use Java 8, change this to "1.8" -->
+					<target>1.8</target> <!-- If you want to use Java 8, change this to "1.8" -->
 				</configuration>
 			</plugin>
 		</plugins>
