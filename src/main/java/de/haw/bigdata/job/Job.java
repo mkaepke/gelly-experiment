@@ -1,16 +1,18 @@
 package de.haw.bigdata.job;
 
-import de.haw.bigdata.pageRank.PageRank;
-import org.apache.commons.math3.random.JDKRandomGenerator;
+import de.haw.bigdata.pageRank.PageRankGSA;
+import de.haw.bigdata.pageRank.PageRankSG;
+import de.haw.bigdata.pageRank.PageRankVC;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.generator.RMatGraph;
-import org.apache.flink.graph.generator.random.JDKRandomGeneratorFactory;
-import org.apache.flink.graph.generator.random.RandomGenerableFactory;
-import org.apache.flink.types.LongValue;
+import org.apache.flink.graph.GraphCsvReader;
+import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.asm.translate.TranslateFunction;
+import org.apache.flink.graph.library.link_analysis.PageRank;
+import org.apache.flink.graph.library.link_analysis.PageRank.Result;
 import org.apache.flink.types.NullValue;
 
 /**
@@ -18,43 +20,73 @@ import org.apache.flink.types.NullValue;
  */
 public class Job {
 
+  private static DataSet<Vertex<Double, Double>> result = null;
+  private static DataSet<Result<Double>> resultPR = null;
+
   public static void main(String[] args) throws Exception {
 
     ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+    env.getConfig().disableSysoutLogging();
 
-    RandomGenerableFactory<JDKRandomGenerator> rnd = new JDKRandomGeneratorFactory();
+    ParameterTool params = ParameterTool.fromArgs(args);
+    env.getConfig().setGlobalJobParameters(params);
+    env.setParallelism(params.getInt("p", 3));
 
-    int vertexCount = 1 << 10L;
-    int edgeCount = 4 * vertexCount;
+    String path = params.getRequired("input");
+//    String delimiterEdges = params.get("del",  " ");
+    String algo = params.getRequired("algo");
+    Double factor = params.getDouble("factor", 0.85);
+    Integer maxIterations = params.getInt("iter", 10);
+    String delimiterEdges;
 
-    Graph<LongValue, NullValue, NullValue> graph = new RMatGraph<>(env, rnd, vertexCount, edgeCount)
-        .generate();
+    switch (params.get("del")) {
+      case "tab" : delimiterEdges = "\t"; break;
+      case "space" : delimiterEdges = " "; break;
+      case "comma" : delimiterEdges = ","; break;
+      case "comma-space" : delimiterEdges = ", "; break;
 
-    try {
-
-    } catch (Exception e) {
-      e.printStackTrace();
+      default : delimiterEdges = ";";
     }
 
-    DataSet<Tuple2<Double, Double>> vertexTuple = env
-        .readCsvFile("/Users/marc/Downloads/vertices2.csv")
-        .ignoreComments("%")
-        .fieldDelimiter(", ")
-        .types(Double.class, Double.class);
+    Graph<Double, Double, Double> foo = new GraphCsvReader(path, env)
+        .ignoreCommentsEdges("#")
+        .fieldDelimiterEdges(delimiterEdges)
+        .keyType(Double.class)
+        .translateVertexValues(new ValueMapper())
+        .translateEdgeValues(new ValueMapper());
 
-    DataSet<Tuple3<Double, Double, Double>> edgeTuple = env
-        .readCsvFile("/Users/marc/Downloads/edges2.csv")
-        .ignoreComments("%")
-        .fieldDelimiter(",")
-        .types(Double.class, Double.class, Double.class);
+    Long start = System.currentTimeMillis();
 
-    Graph<Double, Double, Double> small = Graph.fromTupleDataSet(vertexTuple, edgeTuple, env);
+    switch (algo) {
+      /* vertex centric */
+      case "vc" : result = foo.run(new PageRankVC<>(factor, maxIterations)); break;
+      /* scatter gather */
+      case "sg" : result = foo.run(new PageRankSG<>(factor, maxIterations)); break;
+      /* gather sum apply */
+      case "gsa" : result = foo.run(new PageRankGSA<>(factor, maxIterations)); break;
+      /* without graph model -> delta iteration */
+      case "di" : resultPR = foo.run(new PageRank<>(factor, maxIterations)); break;
 
-    small.getTriplets().printToErr();
+      default : throw new IllegalArgumentException("invalid algo. Choose: vc, sg, gsa or di");
+    }
 
-//    Graph<Double, Double, Double> pagerank = small.run(new PageRank<>(0.5, 10));
-    Graph<Double, Double, Double> pagerank = small.run(new PageRank<>(0.5, 4, 10));
+    env.fromElements(Tuple2.of(System.currentTimeMillis() - start, algo)).printToErr();
 
-    pagerank.getTriplets().printToErr();
+//    if(result != null) {
+//      result.printToErr();
+//    } else {
+//      result2.printToErr();
+//    }
+  }
+
+
+  private static final class ValueMapper implements TranslateFunction<NullValue, Double> {
+
+    private static final long serialVersionUID = -5668422539280882691L;
+
+    @Override
+    public Double translate(NullValue value, Double reuse) throws Exception {
+      return 1d;
+    }
   }
 }
