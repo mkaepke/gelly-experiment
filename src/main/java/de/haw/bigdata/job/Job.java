@@ -31,7 +31,6 @@ public class Job {
     env.setParallelism(params.getInt("p", 3));
 
     String path = params.getRequired("input");
-//    String delimiterEdges = params.get("del",  " ");
     String algo = params.getRequired("algo");
     Double factor = params.getDouble("factor", 0.85);
     Integer maxIterations = params.getInt("iter", 10);
@@ -46,7 +45,7 @@ public class Job {
       default : delimiterEdges = ";";
     }
 
-    Graph<Double, Double, Double> foo = new GraphCsvReader(path, env)
+    Graph<Double, Double, Double> graph = new GraphCsvReader(path, env)
         .ignoreCommentsEdges("#")
         .fieldDelimiterEdges(delimiterEdges)
         .keyType(Double.class)
@@ -57,15 +56,15 @@ public class Job {
 
     switch (algo) {
       /* vertex centric */
-      case "vc" : result = foo.run(new PageRankVC<>(factor, maxIterations)); break;
+      case "vc" : result = graph.run(new PageRankVC<>(factor, maxIterations)); break;
       /* scatter gather */
-      case "sg" : result = foo.run(new PageRankSG<>(factor, maxIterations)); break;
+      case "sg" : result = graph.run(new PageRankSG<>(factor, maxIterations)); break;
       /* gather sum apply */
-      case "gsa" : result = foo.run(new PageRankGSA<>(factor, maxIterations)); break;
-      /* without graph model -> delta iteration */
-      case "di" : resultPR = foo.run(new PageRank<>(factor, maxIterations)); break;
+      case "gsa" : result = graph.run(new PageRankGSA<>(factor, maxIterations)); break;
+      /* without graph model -> bulk iteration */
+      case "bi" : resultPR = graph.run(new PageRank<>(factor, maxIterations)); break;
 
-      default : throw new IllegalArgumentException("invalid algo. Choose: vc, sg, gsa or di");
+      default : throw new IllegalArgumentException("invalid algo. Choose: vc, sg, gsa or bi");
     }
 
     env.fromElements(Tuple2.of(System.currentTimeMillis() - start, algo)).printToErr();
