@@ -26,10 +26,8 @@ public class Job {
   public static void main(String[] args) throws Exception {
 
     ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-    env.getConfig().disableSysoutLogging();
 
     ParameterTool params = ParameterTool.fromArgs(args);
-    env.getConfig().setGlobalJobParameters(params);
     env.setParallelism(params.getInt("p", 3));
 
     String path = params.getRequired("input");
@@ -39,7 +37,7 @@ public class Job {
     Integer maxIterations = params.getInt("iter", 10);
     String delimiterEdges;
 
-    switch (params.get("del")) {
+    switch (params.get("del", "default")) {
       case "tab" : delimiterEdges = "\t"; break;
       case "space" : delimiterEdges = " "; break;
       case "comma" : delimiterEdges = ","; break;
@@ -72,11 +70,11 @@ public class Job {
 
     env.fromElements(Tuple2.of(System.currentTimeMillis() - start, algo)).printToErr();
 
-//    if(result != null) {
-//      result.printToErr();
-//    } else {
-//      result2.printToErr();
-//    }
+    if(result != null) {
+      result.first(1).printToErr();
+    } else {
+      resultPR.first(1).printToErr();
+    }
   }
 
 
